@@ -1,5 +1,5 @@
-use std::net::TcpListener;
 use cnrust::run;
+use std::net::TcpListener;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
