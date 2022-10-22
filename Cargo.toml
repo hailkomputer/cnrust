@@ -1,6 +1,6 @@
 [package]
 name = "cnrust"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [lib]
@@ -16,7 +16,7 @@ actix-web = "4"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 serde = { version = "1", features = ["derive"] }
 uuid = { version = "1", features = ["v4"] }
-chrono = { version = "0.4.22", default-features = false, features = ["clock"] }
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
 tracing = { version = "0.1", features= ["log"] }
 tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
 tracing-bunyan-formatter = "0.3"
@@ -25,7 +25,7 @@ secrecy = { version = "0.8", features = ["serde"] }
 tracing-actix-web = "0.6"
 serde-aux = "3"
 unicode-segmentation = "1"
-validator = "0.14"
+validator = "0.16"
 
 [dependencies.sqlx]
 version = "0.6"
