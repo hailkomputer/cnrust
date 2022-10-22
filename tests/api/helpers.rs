@@ -2,6 +2,7 @@ use cnrust::configuration::{get_configuration, DatabaseSettings};
 use cnrust::startup::{get_connection_pool, Application};
 use cnrust::telemetry::{get_subscriber, init_subscriber};
 use once_cell::sync::Lazy;
+use reqwest::Url;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
 use wiremock::MockServer;
@@ -21,8 +22,13 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 
 pub struct TestApp {
     pub address: String,
+    pub port: u16,
     pub connection_pool: PgPool,
     pub email_server: MockServer,
+}
+
+pub struct ConfirmationLink {
+    pub link: reqwest::Url,
 }
 
 impl TestApp {
@@ -34,6 +40,26 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute request")
+    }
+
+    pub fn get_confirmation_link(&self, email_request: &wiremock::Request) -> ConfirmationLink {
+        let body: serde_json::Value = serde_json::from_slice(&email_request.body).unwrap();
+
+        let get_link = |s: &str| {
+            let links: Vec<_> = linkify::LinkFinder::new()
+                .links(s)
+                .filter(|l| *l.kind() == linkify::LinkKind::Url)
+                .collect();
+            assert_eq!(links.len(), 1);
+            let raw_link = links[0].as_str().to_owned();
+            let mut confirmation_link = Url::parse(&raw_link).unwrap();
+            assert_eq!(confirmation_link.host_str().unwrap(), "127.0.0.1");
+            confirmation_link.set_port(Some(self.port)).unwrap();
+            confirmation_link
+        };
+
+        let link = get_link(&body["Body"].as_str().unwrap());
+        ConfirmationLink { link }
     }
 }
 
@@ -55,10 +81,11 @@ pub async fn spawn_app() -> TestApp {
     let application = Application::build(configuration.clone())
         .await
         .expect("Failed to build application");
-    let address = format!("http://127.0.0.1:{}", application.port());
+    let application_port = application.port();
     let _ = tokio::spawn(application.run_until_stopped());
     TestApp {
-        address,
+        address: format!("http://localhost:{}", application_port),
+        port: application_port,
         connection_pool: get_connection_pool(&configuration.database),
         email_server,
     }
