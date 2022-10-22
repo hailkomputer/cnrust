@@ -29,19 +29,24 @@ impl EmailClient {
         &self,
         recipient: SubscriberEmail,
         subject: &str,
-        content: &str,
+        html_content: &str,
+        text_content: &str,
     ) -> Result<(), reqwest::Error> {
         let url = format!("{}/messages", self.base_url);
         let request_body = SendEmailRequest {
             from: self.sender.as_ref(),
             to: recipient.as_ref(),
             subject,
-            body: content,
+            html_body: html_content,
+            text_body: text_content,
         };
         self.http_client
             .post(&url)
             .json(&request_body)
-            .basic_auth("api", Some(self.authorization_token.expose_secret()))
+            .header(
+                "X-Postmark-Server-Token",
+                self.authorization_token.expose_secret(),
+            )
             .send()
             .await?
             .error_for_status()?;
@@ -55,7 +60,8 @@ struct SendEmailRequest<'a> {
     from: &'a str,
     to: &'a str,
     subject: &'a str,
-    body: &'a str,
+    html_body: &'a str,
+    text_body: &'a str,
 }
 
 #[cfg(test)]
@@ -76,7 +82,7 @@ mod tests {
         let mock_server = MockServer::start().await;
         let email_client = email_client(mock_server.uri());
 
-        Mock::given(header_exists("Authorization"))
+        Mock::given(header_exists("X-Postmark-Server-Token"))
             .and(header("Content-Type", "application/json"))
             .and(path("/messages"))
             .and(method("POST"))
@@ -87,7 +93,7 @@ mod tests {
             .await;
 
         let _ = email_client
-            .send_email(email(), &subject(), &content())
+            .send_email(email(), &subject(), &content(), &content())
             .await;
     }
 
@@ -103,7 +109,7 @@ mod tests {
             .await;
 
         let outcome = email_client
-            .send_email(email(), &subject(), &content())
+            .send_email(email(), &subject(), &content(), &content())
             .await;
 
         assert_ok!(outcome);
@@ -121,7 +127,7 @@ mod tests {
             .await;
 
         let outcome = email_client
-            .send_email(email(), &subject(), &content())
+            .send_email(email(), &subject(), &content(), &content())
             .await;
 
         assert_err!(outcome);
@@ -141,7 +147,7 @@ mod tests {
             .await;
 
         let outcome = email_client
-            .send_email(email(), &subject(), &content())
+            .send_email(email(), &subject(), &content(), &content())
             .await;
 
         assert_err!(outcome);
@@ -157,7 +163,8 @@ mod tests {
                 body.get("From").is_some()
                     && body.get("To").is_some()
                     && body.get("Subject").is_some()
-                    && body.get("Body").is_some()
+                    && body.get("HtmlBody").is_some()
+                    && body.get("TextBody").is_some()
             } else {
                 false
             }

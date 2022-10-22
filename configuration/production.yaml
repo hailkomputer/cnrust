@@ -3,5 +3,4 @@ application:
 database:
   require_ssl: true
 email_client:
-  base_url: "https://api.mailgun.net/v3/sandboxf982cb26a1f14a8688248b9cfa7d61bf.mailgun.org"
-  sender_email: "yigit.demirbas+cnrust@gmail.com"
+  base_url: "https://api.postmarkapp.com"

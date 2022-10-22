@@ -27,8 +27,9 @@ pub struct TestApp {
     pub email_server: MockServer,
 }
 
-pub struct ConfirmationLink {
-    pub link: reqwest::Url,
+pub struct ConfirmationLinks {
+    pub html: reqwest::Url,
+    pub plain_text: reqwest::Url,
 }
 
 impl TestApp {
@@ -42,7 +43,7 @@ impl TestApp {
             .expect("Failed to execute request")
     }
 
-    pub fn get_confirmation_link(&self, email_request: &wiremock::Request) -> ConfirmationLink {
+    pub fn get_confirmation_link(&self, email_request: &wiremock::Request) -> ConfirmationLinks {
         let body: serde_json::Value = serde_json::from_slice(&email_request.body).unwrap();
 
         let get_link = |s: &str| {
@@ -58,8 +59,9 @@ impl TestApp {
             confirmation_link
         };
 
-        let link = get_link(&body["Body"].as_str().unwrap());
-        ConfirmationLink { link }
+        let html = get_link(body["HtmlBody"].as_str().unwrap());
+        let plain_text = get_link(body["TextBody"].as_str().unwrap());
+        ConfirmationLinks { html, plain_text }
     }
 }
 

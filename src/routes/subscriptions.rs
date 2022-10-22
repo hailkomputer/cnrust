@@ -79,12 +79,16 @@ pub async fn send_confirmation_email(
         "{}/subscriptions/confirm?subscription_token={}",
         base_url, subscription_token,
     );
-    let body = format!(
-        "Welcome to the newsletter!\nVisit {} to confirm your subscription.",
+    let plain_body = format!(
+        "Welcome to our newsletter!\nVisit {} to confirm your subscription.",
+        confirmation_link
+    );
+    let html_body = format!(
+        "Welcome to our newsletter!<br />Click <a href=\"{}\">here</a> to confirm your subscription.",
         confirmation_link
     );
     email_client
-        .send_email(new_subscriber.email, "Welcome!", &body)
+        .send_email(new_subscriber.email, "Welcome!", &html_body, &plain_body)
         .await
 }
 

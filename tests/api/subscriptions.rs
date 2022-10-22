@@ -1,5 +1,4 @@
 use crate::helpers::spawn_app;
-use claim::assert_ge;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, ResponseTemplate};
 
@@ -98,6 +97,6 @@ async fn subsribe_sends_a_confirmation_email_for_with_a_link() {
     app.post_subscriptions(body.into()).await;
 
     let email_request = &app.email_server.received_requests().await.unwrap()[0];
-    let confirmation_link = app.get_confirmation_link(&email_request);
-    assert_ge!(confirmation_link.link.as_str().len(), 1)
+    let confirmation_links = app.get_confirmation_link(&email_request);
+    assert_eq!(confirmation_links.html, confirmation_links.plain_text);
 }
